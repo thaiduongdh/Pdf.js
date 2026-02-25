@@ -1,0 +1,99 @@
+/* Dark mode - Page Inversion Only */
+/* The UI theme is handled natively by PDF.js (viewerCssTheme = 2) */
+
+/* Inversion Levels (set by dark-mode.js) */
+:is(html, body).dark-mode {
+  --pdfjs-invert-filter: invert(100%) hue-rotate(180deg);
+  --pdfjs-invert-bg: #000;
+}
+
+:is(html, body).dark-mode.pdfjs-invert-mild {
+  /* White paper -> ~#1f1f1f */
+  --pdfjs-invert-filter: invert(88%) hue-rotate(180deg);
+  --pdfjs-invert-bg: #1f1f1f;
+}
+
+:is(html, body).dark-mode.pdfjs-invert-full {
+  --pdfjs-invert-filter: invert(100%) hue-rotate(180deg);
+  --pdfjs-invert-bg: #000;
+}
+
+/* Toggle Button Styling */
+#smartInvertToggle,
+#resetReadPosButton {
+  background: transparent;
+  border: none;
+  min-width: 32px;
+  min-height: 25px;
+  border-radius: 2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--toolbar-icon-bg-color);
+  /* Uses PDF.js var */
+}
+
+#smartInvertToggle:hover,
+#resetReadPosButton:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+#smartInvertToggle::before,
+#resetReadPosButton::before {
+  display: none;
+  content: none;
+}
+
+#smartInvertToggle > span,
+#resetReadPosButton > span {
+  width: auto;
+  height: auto;
+  overflow: visible;
+}
+
+#smartInvertToggle span {
+  filter: grayscale(1);
+}
+
+body.dark-mode #smartInvertToggle span {
+  filter: none;
+}
+
+/* 
+   Page Inversion 
+   Active when html or body has 'dark-mode' class
+*/
+:is(html, body).dark-mode .page.pdfjs-smart-invert {
+  /* Also fill the transparent page border "gutter" to avoid an outline/halo. */
+  border-color: var(--pdfjs-invert-bg);
+  background-color: var(--pdfjs-invert-bg);
+}
+
+:is(html, body).dark-mode .page.pdfjs-smart-invert .canvasWrapper,
+:is(html, body).dark-mode .page.pdfjs-smart-invert canvas {
+  /* Avoid "halo" artifacts from 1px gaps/alpha at page edges. */
+  background-color: var(--pdfjs-invert-bg);
+}
+
+:is(html, body).dark-mode .thumbnail.pdfjs-smart-invert,
+:is(html, body).dark-mode .thumbnail.pdfjs-smart-invert > .thumbnailImage,
+:is(html, body).dark-mode .thumbnail.pdfjs-smart-invert > canvas {
+  background-color: var(--pdfjs-invert-bg);
+}
+
+:is(html, body).dark-mode .page.pdfjs-smart-invert canvas,
+:is(html, body).dark-mode .thumbnail.pdfjs-smart-invert > .thumbnailImage,
+:is(html, body).dark-mode .thumbnail.pdfjs-smart-invert > canvas {
+  filter: var(--pdfjs-invert-filter);
+}
+
+:is(html, body).dark-mode .page.pdfjs-smart-invert .textLayer {
+  filter: var(--pdfjs-invert-filter);
+  opacity: 0.6;
+}
+
+/* The viewer UI theme is handled by PDF.js; avoid overriding toolbar icons here. */
