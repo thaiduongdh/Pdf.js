@@ -1,8 +1,3 @@
-// Recent Files tracker and landing page for PDF.js / EPUB viewer.
-//
-// - Tracks opened PDFs and EPUBs in localStorage.
-// - Shows a landing page with recent files when no ?file= param is present.
-// - Exposes window.pdfjsRecentFiles.record(url, name) for cross-viewer use.
 (function () {
   "use strict";
 
@@ -10,45 +5,46 @@
   const MAX_ENTRIES = 20;
   const OVERLAY_ID = "recentFilesOverlay";
 
-  // ── Storage helpers ──────────────────────────────────────────────────
+  function sanitizeEntries(entries) {
+    if (!Array.isArray(entries)) {
+      return [];
+    }
+    return entries.filter(entry => {
+      return entry &&
+        typeof entry.url === "string" &&
+        entry.url &&
+        !entry.url.startsWith("blob:");
+    });
+  }
 
   function load() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const arr = JSON.parse(raw);
-        if (Array.isArray(arr)) {
-          return arr;
-        }
+      if (!raw) {
+        return [];
       }
+      const entries = sanitizeEntries(JSON.parse(raw));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+      return entries;
     } catch {
-      // ignore
+      return [];
     }
-    return [];
   }
 
   function save(entries) {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitizeEntries(entries)));
     } catch {
-      // ignore
+      // Ignore storage errors.
     }
   }
 
-  // ── Public API ───────────────────────────────────────────────────────
-
-  /**
-   * Record a file as recently opened.
-   * @param {string} url  – The URL used to open the file (viewer ?file= value).
-   * @param {string} name – Human-readable display name (filename).
-   * @param {string} [type] – "pdf" or "epub". Auto-detected from name if omitted.
-   */
   function record(url, name, type) {
-    if (!url) {
+    if (!url || String(url).startsWith("blob:")) {
       return;
     }
+
     if (!name) {
-      // Derive name from URL.
       try {
         const decoded = decodeURIComponent(url);
         const parts = decoded.replace(/\\/g, "/").split("/");
@@ -57,18 +53,14 @@
         name = url;
       }
     }
+
     if (!type) {
       const lower = (name || url).toLowerCase();
       type = lower.endsWith(".epub") ? "epub" : "pdf";
     }
 
-    const entries = load();
-    // Remove duplicate.
-    const filtered = entries.filter(
-      (e) => e.url !== url
-    );
+    const filtered = load().filter(entry => entry.url !== url);
     filtered.unshift({ url, name, type, ts: Date.now() });
-    // Cap.
     if (filtered.length > MAX_ENTRIES) {
       filtered.length = MAX_ENTRIES;
     }
@@ -76,18 +68,14 @@
   }
 
   function remove(url) {
-    const entries = load().filter((e) => e.url !== url);
-    save(entries);
+    save(load().filter(entry => entry.url !== url));
   }
 
   function clear() {
     save([]);
   }
 
-  // Expose globally so epub-viewer.js (and others) can call it.
   window.pdfjsRecentFiles = { record, remove, clear, load };
-
-  // ── Landing Page ─────────────────────────────────────────────────────
 
   function hasFileParam() {
     try {
@@ -109,152 +97,219 @@
     }
   }
 
-  function formatTime(ts) {
+  function buildRecentViewerUrl(entry) {
+    const page = entry.type === "epub" ? "epub-viewer.html" : "viewer.html";
     try {
-      const d = new Date(ts);
-      const now = new Date();
-      const diffMs = now - d;
-      const diffMin = Math.floor(diffMs / 60000);
-      if (diffMin < 1) return "Just now";
-      if (diffMin < 60) return `${diffMin}m ago`;
-      const diffHr = Math.floor(diffMin / 60);
-      if (diffHr < 24) return `${diffHr}h ago`;
-      const diffDay = Math.floor(diffHr / 24);
-      if (diffDay < 7) return `${diffDay}d ago`;
-      return d.toLocaleDateString();
+      const absoluteUrl = new URL(entry.url, window.location.origin).href;
+      return `${page}?file=${encodeURIComponent(absoluteUrl)}`;
+    } catch {
+      // Fall back to the raw value below.
+    }
+    return `${page}?file=${encodeURIComponent(entry.url)}`;
+  }
+
+  function escapeHtml(value) {
+    const div = document.createElement("div");
+    div.textContent = String(value ?? "");
+    return div.innerHTML;
+  }
+
+  function escapeAttr(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/"/g, "&quot;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+
+  function formatRelativeTime(timestamp) {
+    try {
+      const then = new Date(timestamp);
+      const diffMinutes = Math.floor((Date.now() - then.getTime()) / 60000);
+      if (diffMinutes < 1) {
+        return "Just now";
+      }
+      if (diffMinutes < 60) {
+        return `${diffMinutes}m ago`;
+      }
+      const diffHours = Math.floor(diffMinutes / 60);
+      if (diffHours < 24) {
+        return `${diffHours}h ago`;
+      }
+      const diffDays = Math.floor(diffHours / 24);
+      if (diffDays < 7) {
+        return `${diffDays}d ago`;
+      }
+      return then.toLocaleDateString();
     } catch {
       return "";
     }
   }
 
-  function buildViewerUrl(entry) {
-    if (entry.type === "epub") {
-      return `epub-viewer.html?file=${encodeURIComponent(entry.url)}`;
+  function openPdfPicker() {
+    const fileInput = document.getElementById("fileInput");
+    if (!fileInput) {
+      return;
     }
-    return `viewer.html?file=${encodeURIComponent(entry.url)}`;
+    fileInput.setAttribute("accept", ".pdf,application/pdf");
+    fileInput.click();
   }
 
   function renderOverlay() {
-    const entries = load();
     const overlay = document.getElementById(OVERLAY_ID);
     if (!overlay) {
       return;
     }
 
-    let html = `<div class="rf-card">`;
-    html += `<h2 class="rf-title">Recent Files</h2>`;
-    html += `<p class="rf-subtitle">PDFs and EPUBs you've opened recently</p>`;
+    const recentEntries = load();
+    let html = "";
+    html += `<div class="rf-card">`;
+    html += `<div class="rf-header">`;
+    html += `<div>`;
+    html += `<h2 class="rf-title">Choose a Document</h2>`;
+    html += `<p class="rf-subtitle">Use the local browser for folders or reopen a recent document.</p>`;
+    html += `</div>`;
+    html += `<div class="rf-actions">`;
+    html += `<button class="rf-actionButton" type="button" data-action="open-pdf">Open PDF</button>`;
+    html += `<a class="rf-actionButton" href="epub-viewer.html">Open EPUB</a>`;
+    html += `<a class="rf-actionButton rf-actionButtonPrimary" href="files-classic.html">Open Built-In Browser</a>`;
+    html += `<a class="rf-actionButton" href="files.html">Open File Browser</a>`;
+    html += `</div>`;
+    html += `</div>`;
 
-    if (entries.length === 0) {
-      html += `<div class="rf-empty">No recent files yet.<br>Open a PDF or EPUB to get started.</div>`;
+    html += `<section class="rf-panel">`;
+    html += `<div class="rf-panelHeader">`;
+    html += `<h3 class="rf-sectionTitle">Recent Files</h3>`;
+    html += `<p class="rf-panelHint">PDFs and EPUBs opened from ChromeViewerA3.</p>`;
+    html += `</div>`;
+
+    if (recentEntries.length === 0) {
+      html += `<div class="rf-empty">No recent files yet.</div>`;
     } else {
       html += `<ul class="rf-list">`;
-      for (const entry of entries) {
-        const viewerUrl = buildViewerUrl(entry);
-        const typeUpper = (entry.type || "pdf").toUpperCase();
-        const time = formatTime(entry.ts);
-        html += `<li>`;
-        html += `<a class="rf-item" href="${viewerUrl}" title="${entry.name || ""}">`;
-        html += `<span class="rf-icon" data-type="${entry.type || "pdf"}">${typeUpper}</span>`;
+      for (const entry of recentEntries) {
+        const viewerUrl = buildRecentViewerUrl(entry);
+        const time = formatRelativeTime(entry.ts);
+        html += `<li class="rf-listRow">`;
+        html += `<a class="rf-item" href="${viewerUrl}" title="${escapeAttr(entry.name || "")}">`;
+        html += `<span class="rf-icon" data-type="${escapeAttr(entry.type || "pdf")}">${escapeHtml((entry.type || "pdf").toUpperCase())}</span>`;
         html += `<span class="rf-info">`;
         html += `<span class="rf-name">${escapeHtml(entry.name || entry.url)}</span>`;
         if (time) {
-          html += `<span class="rf-meta">${time}</span>`;
+          html += `<span class="rf-meta">${escapeHtml(time)}</span>`;
         }
         html += `</span>`;
         html += `</a>`;
-        html += `<button class="rf-remove" data-url="${escapeAttr(entry.url)}" title="Remove">×</button>`;
+        html += `<button class="rf-remove" type="button" data-url="${escapeAttr(entry.url)}" title="Remove from recent files">x</button>`;
         html += `</li>`;
       }
       html += `</ul>`;
       html += `<div class="rf-footer"><button class="rf-clear" type="button">Clear all</button></div>`;
     }
 
+    html += `</section>`;
     html += `</div>`;
+
     overlay.innerHTML = html;
     overlay.hidden = false;
 
-    // Bind remove buttons.
-    for (const btn of overlay.querySelectorAll(".rf-remove")) {
-      btn.addEventListener("click", (evt) => {
-        evt.preventDefault();
-        evt.stopPropagation();
-        remove(btn.dataset.url);
+    for (const button of overlay.querySelectorAll(".rf-remove")) {
+      button.addEventListener("click", event => {
+        event.preventDefault();
+        event.stopPropagation();
+        remove(button.getAttribute("data-url"));
         renderOverlay();
       });
     }
 
-    // Bind clear button.
-    const clearBtn = overlay.querySelector(".rf-clear");
-    if (clearBtn) {
-      clearBtn.addEventListener("click", () => {
+    const clearButton = overlay.querySelector(".rf-clear");
+    if (clearButton) {
+      clearButton.addEventListener("click", () => {
         clear();
         renderOverlay();
       });
     }
-  }
 
-  function escapeHtml(str) {
-    const div = document.createElement("div");
-    div.textContent = str;
-    return div.innerHTML;
+    const openPdfButton = overlay.querySelector("[data-action=\"open-pdf\"]");
+    if (openPdfButton) {
+      openPdfButton.addEventListener("click", event => {
+        event.preventDefault();
+        openPdfPicker();
+      });
+    }
   }
-
-  function escapeAttr(str) {
-    return str.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  }
-
-  // ── Auto-record for PDF viewer ──────────────────────────────────────
 
   function autoRecordPdf() {
-    const app = window.PDFViewerApplication;
-    if (!app) {
-      return;
+    let recorded = false;
+
+    function recordCurrentPdf() {
+      if (recorded) {
+        return;
+      }
+      recorded = true;
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const fileParam = params.get("file");
+        if (fileParam && !String(fileParam).startsWith("blob:")) {
+          let name = fileParam;
+          try {
+            const decoded = decodeURIComponent(fileParam);
+            const parts = decoded.replace(/\\/g, "/").split("/");
+            name = parts[parts.length - 1] || decoded;
+            if (decoded.includes("/stream?path=") || decoded.includes("/stream?")) {
+              const url = new URL(decoded, window.location.origin);
+              const streamPath = url.searchParams.get("path");
+              if (streamPath) {
+                const streamParts = streamPath.replace(/\\/g, "/").split("/");
+                name = streamParts[streamParts.length - 1] || name;
+              }
+            }
+          } catch {
+            // Keep the raw file param.
+          }
+          record(fileParam, name, "pdf");
+        }
+      } catch {
+        // Ignore record failures.
+      }
     }
 
-    function waitForEventBus() {
+    function waitForEventBus(app, attempts = 120) {
       const bus = app.eventBus;
       if (bus && typeof bus.on === "function") {
         bus.on("documentloaded", () => {
-          // Hide landing UI when a document is opened without ?file= (e.g. local file picker).
           hideOverlay();
-          try {
-            const params = new URLSearchParams(window.location.search);
-            const fileParam = params.get("file");
-            if (fileParam) {
-              // Try to derive a nice name.
-              let name = fileParam;
-              try {
-                const decoded = decodeURIComponent(fileParam);
-                const parts = decoded.replace(/\\/g, "/").split("/");
-                name = parts[parts.length - 1] || decoded;
-                // If it's a /stream?path=... URL, extract the filename.
-                if (decoded.includes("/stream?path=") || decoded.includes("/stream?")) {
-                  const u = new URL(decoded, window.location.origin);
-                  const p = u.searchParams.get("path");
-                  if (p) {
-                    const pp = p.replace(/\\/g, "/").split("/");
-                    name = pp[pp.length - 1] || name;
-                  }
-                }
-              } catch {
-                // keep raw
-              }
-              record(fileParam, name, "pdf");
-            }
-          } catch {
-            // ignore
-          }
+          recordCurrentPdf();
         });
+        if (app.pdfDocument) {
+          recordCurrentPdf();
+        }
         return;
       }
-      setTimeout(waitForEventBus, 100);
+      if (attempts <= 0) {
+        return;
+      }
+      setTimeout(() => {
+        waitForEventBus(app, attempts - 1);
+      }, 100);
     }
 
-    waitForEventBus();
-  }
+    function waitForApp(attempts = 120) {
+      const app = window.PDFViewerApplication;
+      if (app) {
+        waitForEventBus(app);
+        return;
+      }
+      if (attempts <= 0) {
+        return;
+      }
+      setTimeout(() => {
+        waitForApp(attempts - 1);
+      }, 100);
+    }
 
-  // ── Init ─────────────────────────────────────────────────────────────
+    waitForApp();
+  }
 
   function init() {
     if (document.readyState === "loading") {
@@ -262,12 +317,10 @@
       return;
     }
 
-    // Only show landing page on PDF viewer (epub-viewer has its own flow).
     if (!isEpubViewer()) {
       if (!hasFileParam()) {
-        // Inject overlay container.
         const container = document.getElementById("viewerContainer");
-        if (container) {
+        if (container && !document.getElementById(OVERLAY_ID)) {
           const overlay = document.createElement("div");
           overlay.id = OVERLAY_ID;
           container.appendChild(overlay);

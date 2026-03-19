@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="google" content="notranslate" />
+  <title>ChromeViewerA3 Local Files</title>
+  <link rel="icon" href="../chromeviewera3.ico" />
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6efdf;
+      --panel: #fff9ef;
+      --panel-alt: #f1e4c8;
+      --ink: #241d16;
+      --muted: #6f6256;
+      --accent: #b1441d;
+      --accent-strong: #7e2d10;
+      --line: rgba(36, 29, 22, 0.12);
+      --shadow: 0 20px 60px rgba(61, 40, 24, 0.14);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top left, rgba(177, 68, 29, 0.12), transparent 28%),
+        linear-gradient(180deg, #fcf6ea, var(--bg));
+      color: var(--ink);
+      font-family: "Segoe UI", system-ui, sans-serif;
+    }
+
+    main {
+      width: min(1120px, calc(100% - 32px));
+      margin: 28px auto;
+      display: grid;
+      gap: 18px;
+    }
+
+    .hero,
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      padding: 28px;
+      display: grid;
+      gap: 20px;
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(32px, 5vw, 52px);
+      line-height: 1.02;
+    }
+
+    .lede,
+    .status {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+      max-width: 760px;
+    }
+
+    .heroActions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .action,
+    .tile {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .action {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0 16px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: transparent;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .actionPrimary {
+      border-color: rgba(177, 68, 29, 0.28);
+      background: rgba(177, 68, 29, 0.08);
+      color: var(--accent-strong);
+      font-weight: 700;
+    }
+
+    .panel {
+      padding: 20px;
+    }
+
+    .panelHeader {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .panelHeader h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .panelHint {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .pathForm {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+    }
+
+    .pathInput {
+      width: 100%;
+      min-width: 0;
+      min-height: 48px;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fffdf8;
+      color: var(--ink);
+      font: inherit;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+    }
+
+    .tile {
+      display: grid;
+      gap: 8px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: linear-gradient(180deg, #fffdf7, var(--panel-alt));
+      transition: transform 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+    }
+
+    .tile:hover,
+    .action:hover {
+      transform: translateY(-1px);
+      border-color: rgba(177, 68, 29, 0.22);
+      box-shadow: 0 12px 28px rgba(61, 40, 24, 0.08);
+    }
+
+    .tileLabel {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .tileTitle {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .tileMeta {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+      word-break: break-word;
+    }
+
+    .error {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(177, 68, 29, 0.1);
+      color: var(--accent-strong);
+      display: none;
+    }
+
+    .error.is-visible {
+      display: block;
+    }
+
+    @media (max-width: 720px) {
+      main {
+        width: min(100% - 20px, 1120px);
+        margin: 10px auto 20px;
+      }
+
+      .hero,
+      .panel {
+        border-radius: 20px;
+      }
+
+      .pathForm {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main>
+    <section class="hero">
+      <div>
+        <p class="eyebrow">ChromeViewerA3</p>
+        <h1>Open local files for real.</h1>
+      </div>
+      <p class="lede">
+        Choose a drive, jump to a common folder, or open a specific local path. This page routes into the
+        drive-backed File Browser instances instead of trapping you in the imported project.
+      </p>
+      <div class="heroActions">
+        <a class="action actionPrimary" id="defaultLink" href="start.html">Open default location</a>
+        <a class="action" href="start.html">Back to mode chooser</a>
+      </div>
+      <p class="status" id="statusText">Loading local drive targets.</p>
+    </section>
+
+    <section class="panel">
+      <div class="panelHeader">
+        <h2>Open Path</h2>
+        <p class="panelHint">Example: <code>E:\Books</code> or <code>C:\Users\thaid\Downloads</code></p>
+      </div>
+      <form class="pathForm" id="pathForm">
+        <input class="pathInput" id="pathInput" type="text" name="path" placeholder="Type a local folder path" autocomplete="off" spellcheck="false" />
+        <button class="action actionPrimary" type="submit">Open</button>
+      </form>
+      <div class="error" id="errorText"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panelHeader">
+        <h2>Quick Access</h2>
+        <p class="panelHint">Home and useful entry points</p>
+      </div>
+      <div class="grid" id="placesGrid"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panelHeader">
+        <h2>Drives</h2>
+        <p class="panelHint">Each drive opens in its own File Browser instance</p>
+      </div>
+      <div class="grid" id="drivesGrid"></div>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      "use strict";
+
+      function escapeHtml(value) {
+        const div = document.createElement("div");
+        div.textContent = String(value ?? "");
+        return div.innerHTML;
+      }
+
+      function normalizePath(value) {
+        let normalized = String(value || "").trim().replace(/\//g, "\\");
+        if (!normalized) {
+          return "";
+        }
+        if (/^[A-Za-z]:$/.test(normalized)) {
+          normalized += "\\";
+        }
+        if (/^[A-Za-z]:\\+$/.test(normalized)) {
+          return `${normalized.slice(0, 2).toUpperCase()}\\`;
+        }
+        return normalized.replace(/[\\]+$/, "");
+      }
+
+      function encodeSegments(relativePath) {
+        return relativePath
+          .split(/[\\/]+/)
+          .filter(Boolean)
+          .map(segment => encodeURIComponent(segment))
+          .join("/");
+      }
+
+      function buildDestination(meta, requestedPath) {
+        const normalizedRequested = normalizePath(requestedPath);
+        if (!normalizedRequested) {
+          return null;
+        }
+
+        const requestedLower = normalizedRequested.toLowerCase();
+        for (const target of meta.fileBrowserTargets || []) {
+          const rootPath = normalizePath(target.path || target.rootPath);
+          const rootLower = rootPath.toLowerCase();
+          if (requestedLower === rootLower || requestedLower.startsWith(rootLower)) {
+            const relativePath = normalizedRequested.slice(rootPath.length).replace(/^[\\]+/, "");
+            return relativePath
+              ? `${String(target.url || "").replace(/\/+$/, "")}/${encodeSegments(relativePath)}`
+              : target.url;
+          }
+        }
+
+        return null;
+      }
+
+      function renderTiles(container, items, kind) {
+        if (!container) {
+          return;
+        }
+
+        if (!Array.isArray(items) || items.length === 0) {
+          container.innerHTML = `<div class="tile"><div class="tileTitle">Nothing available</div><div class="tileMeta">No ${kind} targets were detected.</div></div>`;
+          return;
+        }
+
+        container.innerHTML = items.map(item => {
+          const href = escapeHtml(item.url || "#");
+          const label = escapeHtml(kind === "place" ? "Quick access" : "Drive");
+          const title = escapeHtml(item.label || item.name || item.path || item.rootPath);
+          const meta = escapeHtml(item.path || item.rootPath || item.url || "");
+          return (
+            `<a class="tile" href="${href}">` +
+              `<div class="tileLabel">${label}</div>` +
+              `<div class="tileTitle">${title}</div>` +
+              `<div class="tileMeta">${meta}</div>` +
+            `</a>`
+          );
+        }).join("");
+      }
+
+      function showError(message) {
+        const errorText = document.getElementById("errorText");
+        if (!errorText) {
+          return;
+        }
+        errorText.textContent = message;
+        errorText.classList.add("is-visible");
+      }
+
+      function clearError() {
+        const errorText = document.getElementById("errorText");
+        if (!errorText) {
+          return;
+        }
+        errorText.textContent = "";
+        errorText.classList.remove("is-visible");
+      }
+
+      async function init() {
+        const statusText = document.getElementById("statusText");
+        const pathInput = document.getElementById("pathInput");
+        const pathForm = document.getElementById("pathForm");
+        const defaultLink = document.getElementById("defaultLink");
+
+        try {
+          const meta = await fetch("/api/app-meta", { cache: "no-store" }).then(response => response.json());
+          const params = new URLSearchParams(window.location.search);
+          const requestedPath = params.get("path");
+          const targetMode = params.get("target");
+
+          if (defaultLink && meta.defaultFileBrowserUrl) {
+            defaultLink.href = meta.defaultFileBrowserUrl;
+          }
+
+          renderTiles(document.getElementById("placesGrid"), meta.places, "place");
+          renderTiles(document.getElementById("drivesGrid"), meta.fileBrowserTargets, "drive");
+
+          if (pathInput && requestedPath) {
+            pathInput.value = requestedPath;
+          } else if (pathInput && meta.defaultBrowsePath) {
+            pathInput.value = meta.defaultBrowsePath;
+          }
+
+          if (targetMode === "default" && meta.defaultFileBrowserUrl) {
+            if (statusText) {
+              statusText.textContent = "Opening the default local folder in File Browser.";
+            }
+            window.location.replace(meta.defaultFileBrowserUrl);
+            return;
+          }
+
+          if (requestedPath) {
+            const destination = buildDestination(meta, requestedPath);
+            if (destination) {
+              if (statusText) {
+                statusText.textContent = "Opening the requested local folder in File Browser.";
+              }
+              window.location.replace(destination);
+              return;
+            }
+            showError("That path does not match any available local drive target.");
+          }
+
+          if (statusText) {
+            statusText.textContent = "Choose a local drive or quick-access location.";
+          }
+
+          if (pathForm) {
+            pathForm.addEventListener("submit", event => {
+              event.preventDefault();
+              clearError();
+              const destination = buildDestination(meta, pathInput ? pathInput.value : "");
+              if (!destination) {
+                showError("Enter a local path on one of the available drives.");
+                return;
+              }
+              window.location.assign(destination);
+            });
+          }
+        } catch (error) {
+          if (statusText) {
+            statusText.textContent = "Local drive metadata could not be loaded.";
+          }
+          showError("The local drive targets are unavailable right now.");
+        }
+      }
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", init, { once: true });
+      } else {
+        init();
+      }
+    })();
+  </script>
+</body>
+
+</html>

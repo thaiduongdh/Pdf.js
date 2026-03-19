@@ -1,15 +1,9 @@
-/* Recent Files Landing Page */
-
 #recentFilesOverlay {
   position: absolute;
   inset: 0;
   z-index: 10;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding-top: min(12vh, 120px);
   overflow: auto;
-  /* Inherit viewer background so it works in both light & dark themes. */
+  padding: min(6vh, 48px) clamp(16px, 4vw, 40px);
   background: var(--body-bg-color, #808080);
 }
 
@@ -18,32 +12,103 @@
 }
 
 .rf-card {
-  width: min(520px, 92vw);
-  border-radius: 12px;
-  padding: 28px 32px 20px;
-  background: var(--doorhanger-bg-color, #fff);
-  color: var(--main-color, #333);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
+  width: min(760px, 100%);
+  margin: 0 auto;
+  border-radius: 18px;
+  padding: 28px;
+  background: var(--doorhanger-bg-color, #ffffff);
+  color: var(--main-color, #333333);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.22);
   font-family: "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
 }
 
+.rf-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
 .rf-title {
-  font-size: 17px;
-  font-weight: 700;
   margin: 0 0 6px;
+  font-size: 22px;
+  font-weight: 700;
   letter-spacing: 0.01em;
 }
 
 .rf-subtitle {
+  margin: 0;
+  font-size: 13px;
+  color: var(--toggled-btn-color, #777777);
+}
+
+.rf-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.rf-actionButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--separator-color, rgba(0, 0, 0, 0.12));
+  background: transparent;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  font: inherit;
+}
+
+.rf-actionButtonPrimary {
+  border-color: rgba(44, 123, 229, 0.28);
+  background: rgba(44, 123, 229, 0.08);
+  color: var(--accent-color, #2c7be5);
+}
+
+.rf-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border: 1px solid var(--separator-color, rgba(0, 0, 0, 0.12));
+  border-radius: 14px;
+  padding: 18px;
+  background: var(--field-color, rgba(0, 0, 0, 0.03));
+}
+
+.rf-panelHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.rf-sectionTitle {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.rf-panelHint {
+  margin: 0;
   font-size: 12px;
-  color: var(--toggled-btn-color, #888);
-  margin: 0 0 18px;
+  color: var(--toggled-btn-color, #777777);
 }
 
 .rf-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 140px;
+  padding: 20px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.03);
+  color: var(--toggled-btn-color, #777777);
   font-size: 13px;
-  color: var(--toggled-btn-color, #888);
-  padding: 18px 0;
   text-align: center;
 }
 
@@ -53,108 +118,129 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 6px;
+}
+
+.rf-listRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
 }
 
 .rf-item {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  cursor: pointer;
-  text-decoration: none;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
   color: inherit;
-  transition: background 0.12s;
+  text-align: left;
+  text-decoration: none;
+  transition: background 0.12s ease, box-shadow 0.12s ease;
 }
 
-.rf-item:hover {
-  background: var(--button-hover-color, rgba(0, 0, 0, 0.07));
+.rf-item:hover,
+.rf-actionButton:hover,
+.rf-clear:hover {
+  background: var(--button-hover-color, rgba(0, 0, 0, 0.08));
+}
+
+.rf-item:focus-visible,
+.rf-actionButton:focus-visible,
+.rf-clear:focus-visible,
+.rf-remove:focus-visible {
+  outline: 2px solid var(--accent-color, #2c7be5);
+  outline-offset: 2px;
 }
 
 .rf-icon {
   flex: none;
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  display: flex;
+  width: 42px;
+  height: 32px;
+  border-radius: 8px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.03em;
-  color: #fff;
+  letter-spacing: 0.04em;
+  color: #ffffff;
 }
 
 .rf-icon[data-type="pdf"] {
-  background: #e04040;
+  background: #d84444;
 }
 
 .rf-icon[data-type="epub"] {
-  background: #2e8b57;
+  background: #2d8d5d;
 }
 
 .rf-info {
-  flex: 1;
   min-width: 0;
+  flex: 1;
 }
 
 .rf-name {
-  font-size: 13px;
-  font-weight: 500;
-  line-height: 1.3;
+  display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .rf-meta {
+  display: block;
+  margin-top: 2px;
+  color: var(--toggled-btn-color, #777777);
   font-size: 11px;
-  color: var(--toggled-btn-color, #888);
-  margin-top: 1px;
+}
+
+.rf-remove,
+.rf-clear {
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
 }
 
 .rf-remove {
-  flex: none;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--toggled-btn-color, #888);
-  font-size: 16px;
-  line-height: 1;
-  padding: 2px 4px;
-  border-radius: 4px;
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-
-.rf-item:hover .rf-remove {
-  opacity: 1;
+  width: 32px;
+  height: 32px;
+  color: var(--toggled-btn-color, #777777);
+  font-size: 14px;
 }
 
 .rf-remove:hover {
-  color: #e04040;
+  color: #d84444;
 }
 
 .rf-footer {
-  margin-top: 14px;
-  padding-top: 10px;
-  border-top: 1px solid var(--separator-color, rgba(0, 0, 0, 0.1));
   display: flex;
   justify-content: flex-end;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--separator-color, rgba(0, 0, 0, 0.12));
 }
 
 .rf-clear {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 12px;
-  color: var(--toggled-btn-color, #888);
-  padding: 4px 8px;
-  border-radius: 4px;
+  padding: 6px 10px;
 }
 
-.rf-clear:hover {
-  color: #e04040;
-  background: rgba(224, 64, 64, 0.08);
+@media (max-width: 900px) {
+  #recentFilesOverlay {
+    padding: 16px;
+  }
+
+  .rf-card {
+    padding: 20px;
+  }
+
+  .rf-header {
+    flex-direction: column;
+  }
 }
