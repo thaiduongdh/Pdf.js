@@ -11,14 +11,26 @@ param(
 $ErrorActionPreference = "Stop"
 
 $root = $PSScriptRoot
-$preferredTarget = Join-Path $root "chromeviewera3-app.bat"
-$fallbackTarget = Join-Path $root "start-chromeviewera3.bat"
-$target = if (Test-Path -LiteralPath $preferredTarget) {
-  $preferredTarget
-} elseif (Test-Path -LiteralPath $fallbackTarget) {
-  $fallbackTarget
+$preferredTarget = Join-Path $root "chromeviewera3-app.vbs"
+$fallbackTargets = @(
+  (Join-Path $root "chromeviewera3-app.bat"),
+  (Join-Path $root "start-chromeviewera3.bat")
+)
+
+$target = $null
+if (Test-Path -LiteralPath $preferredTarget) {
+  $target = $preferredTarget
 } else {
-  throw "Missing launcher: $preferredTarget or $fallbackTarget"
+  foreach ($candidate in $fallbackTargets) {
+    if (Test-Path -LiteralPath $candidate) {
+      $target = $candidate
+      break
+    }
+  }
+}
+
+if (-not $target) {
+  throw "Missing launcher: $preferredTarget or $($fallbackTargets -join ', ')"
 }
 $iconPath = Join-Path $root "chromeviewera3.ico"
 
@@ -103,11 +115,11 @@ function New-ChromeViewerA3Icon {
 }
 
 $sourceImagePath = Find-ChromeViewerA3SourceImage
-if (-not $sourceImagePath) {
-  throw "Could not find the ChromeViewerA3 source image on the Desktop."
+if ($sourceImagePath) {
+  New-ChromeViewerA3Icon -Path $iconPath -SourceImagePath $sourceImagePath
+} elseif (-not (Test-Path -LiteralPath $iconPath)) {
+  throw "Could not find the ChromeViewerA3 source image on the Desktop and the existing icon is missing: $iconPath"
 }
-
-New-ChromeViewerA3Icon -Path $iconPath -SourceImagePath $sourceImagePath
 
 $legacyNames = @("Start LocalReader")
 $programsDir = Join-Path $env:APPDATA "Microsoft\\Windows\\Start Menu\\Programs"

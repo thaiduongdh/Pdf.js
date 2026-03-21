@@ -6,7 +6,6 @@ param(
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $port = 8080
 $serverUrl = "http://localhost:$port"
-& (Join-Path $root "ensure-chromeviewera3-services.ps1")
 
 # Open viewer
 if ($FilePath) {
@@ -43,4 +42,18 @@ else {
     $viewerUrl = "$serverUrl/web/start.html"
 }
 
-Start-Process $viewerUrl
+$appScript = Join-Path $root "chromeviewera3-app.ps1"
+$argumentList = @(
+    "-NoProfile",
+    "-STA",
+    "-ExecutionPolicy",
+    "Bypass",
+    "-WindowStyle",
+    "Hidden",
+    "-File",
+    "`"$appScript`"",
+    "-ViewerUrl",
+    "`"$viewerUrl`""
+)
+
+Start-Process -FilePath "powershell.exe" -ArgumentList $argumentList -WorkingDirectory $root -WindowStyle Hidden | Out-Null

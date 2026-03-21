@@ -1,6 +1,14 @@
-# Start ChromeViewerA3 and open the mode chooser.
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
-$serverUrl = "http://localhost:8080"
-& (Join-Path $root "ensure-chromeviewera3-services.ps1")
+$appScript = Join-Path $root "chromeviewera3-app.ps1"
+$argumentList = @(
+    "-NoProfile",
+    "-STA",
+    "-ExecutionPolicy",
+    "Bypass",
+    "-WindowStyle",
+    "Hidden",
+    "-File",
+    "`"$appScript`""
+)
 
-Start-Process "$serverUrl/web/start.html"
+Start-Process -FilePath "powershell.exe" -ArgumentList $argumentList -WorkingDirectory $root -WindowStyle Hidden | Out-Null
