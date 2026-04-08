@@ -109,7 +109,7 @@ function Open-ChromeViewerA3Window {
 
     $browserPath = Get-AppBrowserPath
     if ($browserPath) {
-        Start-Process -FilePath $browserPath -ArgumentList "--app=$Url" | Out-Null
+        Start-Process -FilePath $browserPath -ArgumentList @("--new-window", $Url) | Out-Null
         return
     }
 

@@ -244,6 +244,48 @@ function Ensure-NodeServer {
     }
 }
 
+function Invoke-FileBrowserCli {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string[]]$Arguments,
+        [Parameter(Mandatory = $true)]
+        [string]$FailureContext
+    )
+
+    $tempPrefix = "chromeviewera3-filebrowser-" + [guid]::NewGuid().ToString("N")
+    $stdoutPath = Join-Path $env:TEMP ($tempPrefix + ".stdout.log")
+    $stderrPath = Join-Path $env:TEMP ($tempPrefix + ".stderr.log")
+
+    try {
+        $process = Start-Process `
+            -FilePath $fileBrowserExe `
+            -ArgumentList $Arguments `
+            -WorkingDirectory (Split-Path -Parent $fileBrowserExe) `
+            -WindowStyle Hidden `
+            -Wait `
+            -PassThru `
+            -RedirectStandardOutput $stdoutPath `
+            -RedirectStandardError $stderrPath
+
+        $stderrText = ""
+        if (Test-Path -LiteralPath $stderrPath) {
+            $stderrText = (Get-Content -LiteralPath $stderrPath -ErrorAction SilentlyContinue) -join [Environment]::NewLine
+            $stderrText = $stderrText.Trim()
+        }
+
+        if ($process.ExitCode -ne 0) {
+            if ($stderrText) {
+                throw "$FailureContext failed (exit $($process.ExitCode)): $stderrText"
+            }
+            throw "$FailureContext failed (exit $($process.ExitCode))."
+        }
+    }
+    finally {
+        Remove-Item -LiteralPath $stdoutPath -Force -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath $stderrPath -Force -ErrorAction SilentlyContinue
+    }
+}
+
 function Configure-FileBrowser {
     param(
         [Parameter(Mandatory = $true)]
@@ -251,30 +293,40 @@ function Configure-FileBrowser {
     )
 
     if (-not (Test-Path -LiteralPath $Target.DatabasePath)) {
-        & $fileBrowserExe config init `
-            -d $Target.DatabasePath `
-            -a 127.0.0.1 `
-            -p $Target.Port `
-            -r $Target.RootPath `
-            --auth.method noauth `
-            --branding.name "ChromeViewerA3" `
-            --branding.disableExternal `
-            --branding.disableUsedPercentage `
-            --singleClick `
-            --hideLoginButton *> $null
+        Invoke-FileBrowserCli `
+            -Arguments @(
+                "config",
+                "init",
+                "-d", $Target.DatabasePath,
+                "-a", "127.0.0.1",
+                "-p", "$($Target.Port)",
+                "-r", $Target.RootPath,
+                "--auth.method", "noauth",
+                "--branding.name", "ChromeViewerA3",
+                "--branding.disableExternal",
+                "--branding.disableUsedPercentage",
+                "--singleClick",
+                "--hideLoginButton"
+            ) `
+            -FailureContext "File Browser config init for $($Target.RootPath)"
     }
 
-    & $fileBrowserExe config set `
-        -d $Target.DatabasePath `
-        -a 127.0.0.1 `
-        -p $Target.Port `
-        -r $Target.RootPath `
-        --auth.method noauth `
-        --branding.name "ChromeViewerA3" `
-        --branding.disableExternal `
-        --branding.disableUsedPercentage `
-        --singleClick `
-        --hideLoginButton *> $null
+    Invoke-FileBrowserCli `
+        -Arguments @(
+            "config",
+            "set",
+            "-d", $Target.DatabasePath,
+            "-a", "127.0.0.1",
+            "-p", "$($Target.Port)",
+            "-r", $Target.RootPath,
+            "--auth.method", "noauth",
+            "--branding.name", "ChromeViewerA3",
+            "--branding.disableExternal",
+            "--branding.disableUsedPercentage",
+            "--singleClick",
+            "--hideLoginButton"
+        ) `
+        -FailureContext "File Browser config set for $($Target.RootPath)"
 }
 
 function Ensure-FileBrowser {
