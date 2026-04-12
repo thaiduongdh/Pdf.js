@@ -108,7 +108,6 @@ function Get-AppBrowserArguments {
     )
 
     return @(
-        "--new-window",
         # Prefer grayscale antialiasing to avoid RGB/BGR color fringing on text.
         "--disable-lcd-text",
         "--force-color-profile=srgb",
@@ -135,6 +134,34 @@ $root = $PSScriptRoot
 $serverUrl = "http://localhost:8080"
 if (-not $ViewerUrl) {
     $ViewerUrl = "$serverUrl/web/start.html"
+}
+
+function Exit-TrayHost {
+    param(
+        [Parameter(Mandatory = $true)]
+        [System.Windows.Forms.ApplicationContext]$ApplicationContext,
+        [System.Windows.Forms.NotifyIcon]$TrayIcon
+    )
+
+    if ($TrayIcon) {
+        $TrayIcon.Visible = $false
+    }
+
+    $ApplicationContext.ExitThread()
+}
+
+function Restart-TrayHost {
+    param(
+        [Parameter(Mandatory = $true)]
+        [System.Windows.Forms.ApplicationContext]$ApplicationContext,
+        [System.Windows.Forms.NotifyIcon]$TrayIcon,
+        [Parameter(Mandatory = $true)]
+        [string]$ScriptPath,
+        [string]$Url
+    )
+
+    Start-ChromeViewerA3TrayHost -ScriptPath $ScriptPath -Url $Url
+    Exit-TrayHost -ApplicationContext $ApplicationContext -TrayIcon $TrayIcon
 }
 
 $notifyIcon = $null
@@ -168,15 +195,22 @@ try {
         Open-ChromeViewerA3Window -Url $ViewerUrl
     })
 
+    $restartMenuItem = [System.Windows.Forms.ToolStripMenuItem]::new("Restart ChromeViewerA3")
+    $restartMenuItem.add_Click({
+        Restart-TrayHost `
+            -ApplicationContext $applicationContext `
+            -TrayIcon $notifyIcon `
+            -ScriptPath $PSCommandPath `
+            -Url $ViewerUrl
+    })
+
     $exitMenuItem = [System.Windows.Forms.ToolStripMenuItem]::new("Exit Tray")
     $exitMenuItem.add_Click({
-        if ($notifyIcon) {
-            $notifyIcon.Visible = $false
-        }
-        $applicationContext.ExitThread()
+        Exit-TrayHost -ApplicationContext $applicationContext -TrayIcon $notifyIcon
     })
 
     [void]$contextMenu.Items.Add($openMenuItem)
+    [void]$contextMenu.Items.Add($restartMenuItem)
     [void]$contextMenu.Items.Add([System.Windows.Forms.ToolStripSeparator]::new())
     [void]$contextMenu.Items.Add($exitMenuItem)
 
