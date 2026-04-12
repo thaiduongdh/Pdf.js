@@ -101,6 +101,21 @@ function Get-AppBrowserPath {
     return $null
 }
 
+function Get-AppBrowserArguments {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Url
+    )
+
+    return @(
+        "--new-window",
+        # Prefer grayscale antialiasing to avoid RGB/BGR color fringing on text.
+        "--disable-lcd-text",
+        "--force-color-profile=srgb",
+        $Url
+    )
+}
+
 function Open-ChromeViewerA3Window {
     param(
         [Parameter(Mandatory = $true)]
@@ -109,7 +124,7 @@ function Open-ChromeViewerA3Window {
 
     $browserPath = Get-AppBrowserPath
     if ($browserPath) {
-        Start-Process -FilePath $browserPath -ArgumentList @("--new-window", $Url) | Out-Null
+        Start-Process -FilePath $browserPath -ArgumentList (Get-AppBrowserArguments -Url $Url) | Out-Null
         return
     }
 
