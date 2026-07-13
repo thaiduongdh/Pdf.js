@@ -42,7 +42,7 @@ else {
 }
 
 # Backup customizations (Define list of files to preserve)
-$customFiles = @("web\dark-mode.css", "web\dark-mode.js", "web\reading-position.js", "web\recent-files.css", "web\recent-files.js", "web\drop-handler.js", "web\epub-viewer.html", "web\epub-viewer.css", "web\epub-viewer.js", "web\epub.min.js", "web\jszip.min.js")
+$customFiles = @("web\dark-mode.css", "web\dark-mode.js", "web\reading-position.js", "web\recent-files.css", "web\recent-files.js", "web\drop-handler.js", "web\epub-viewer.html", "web\epub-viewer.css", "web\epub-viewer.js", "web\epub.min.js", "web\jszip.min.js", "web\files-classic.html", "web\files.css", "web\files.html", "web\files.js", "web\start.css", "web\start.html", "web\startup-entry.js")
 $preservedFiles = @{}
 
 foreach ($file in $customFiles) {
