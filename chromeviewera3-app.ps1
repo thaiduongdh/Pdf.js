@@ -195,7 +195,7 @@ try {
         Open-ChromeViewerA3Window -Url $ViewerUrl
     })
 
-    $restartMenuItem = [System.Windows.Forms.ToolStripMenuItem]::new("Restart ChromeViewerA3")
+    $restartMenuItem = [System.Windows.Forms.ToolStripMenuItem]::new("Reload App")
     $restartMenuItem.add_Click({
         Restart-TrayHost `
             -ApplicationContext $applicationContext `
@@ -204,8 +204,10 @@ try {
             -Url $ViewerUrl
     })
 
-    $exitMenuItem = [System.Windows.Forms.ToolStripMenuItem]::new("Exit Tray")
+    $exitMenuItem = [System.Windows.Forms.ToolStripMenuItem]::new("Exit App")
     $exitMenuItem.add_Click({
+        Stop-Process -Name "node" -Force -ErrorAction SilentlyContinue
+        Stop-Process -Name "filebrowser" -Force -ErrorAction SilentlyContinue
         Exit-TrayHost -ApplicationContext $applicationContext -TrayIcon $notifyIcon
     })
 
