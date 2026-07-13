@@ -22,12 +22,28 @@ $latestVersion = $release.tag_name
 Write-Host "Latest version: $latestVersion" -ForegroundColor Green
 
 # Check local version
+$isUpToDate = $false
 if (Test-Path $versionFile) {
     $currentVersion = Get-Content $versionFile -Raw
     if ($currentVersion.Trim() -eq $latestVersion) {
-        Write-Host "Already up to date ($currentVersion). Skipping check." -ForegroundColor Gray
-        exit
+        Write-Host "Already up to date ($currentVersion). Skipping download." -ForegroundColor Gray
+        $isUpToDate = $true
     }
+}
+
+if ($isUpToDate) {
+    # Still update build timestamps across all html files to bust cache
+    $timestamp = Get-Date -Format 'yyyyMMdd_HHmmss'
+    $htmlFiles = Get-ChildItem -Path (Join-Path $root "web") -Filter "*.html"
+    foreach ($htmlFile in $htmlFiles) {
+        $htmlContent = Get-Content $htmlFile.FullName -Raw
+        if ($htmlContent -match '\?v=[0-9a-zA-Z_-]+') {
+            $htmlContent = $htmlContent -replace '\?v=[0-9a-zA-Z_-]+', "?v=$timestamp"
+            $htmlContent | Set-Content $htmlFile.FullName -NoNewline
+            Write-Host "Updated timestamps in $($htmlFile.Name)" -ForegroundColor Green
+        }
+    }
+    exit
 }
 
 $asset = $release.assets | Where-Object { $_.name -like "*dist*" -and $_.name -notlike "*legacy*" } | Select-Object -First 1
