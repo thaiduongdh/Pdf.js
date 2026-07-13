@@ -215,7 +215,23 @@ try {
     [void]$contextMenu.Items.Add($exitMenuItem)
 
     $notifyIcon = [System.Windows.Forms.NotifyIcon]::new()
-    $notifyIcon.Text = "ChromeViewerA3"
+    
+    $gitInfo = ""
+    try {
+        $gitInfo = & git -C $root log -1 --format="%ci @%h" 2>$null
+    } catch {}
+    
+    if ([string]::IsNullOrWhiteSpace($gitInfo)) {
+        $notifyIcon.Text = "ChromeViewerA3 (Unknown Build)"
+    } else {
+        $notifyIcon.Text = "ChromeViewerA3 (Updated: $gitInfo)"
+    }
+    
+    # Ensure it's not too long (NotifyIcon.Text limit is 63 or 127 chars)
+    if ($notifyIcon.Text.Length -gt 63) {
+        $notifyIcon.Text = $notifyIcon.Text.Substring(0, 60) + "..."
+    }
+
     $notifyIcon.ContextMenuStrip = $contextMenu
     $notifyIcon.add_MouseDoubleClick({
         param($sender, $eventArgs)
