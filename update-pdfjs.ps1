@@ -147,6 +147,17 @@ if ($modified) {
     Write-Host "Injected customizations into viewer.html" -ForegroundColor Green
 }
 
+# Update build timestamps across all html files to bust cache
+$htmlFiles = Get-ChildItem -Path (Join-Path $root "web") -Filter "*.html"
+foreach ($htmlFile in $htmlFiles) {
+    $htmlContent = Get-Content $htmlFile.FullName -Raw
+    if ($htmlContent -match '\?v=[0-9a-zA-Z_-]+') {
+        $htmlContent = $htmlContent -replace '\?v=[0-9a-zA-Z_-]+', "?v=$timestamp"
+        $htmlContent | Set-Content $htmlFile.FullName -NoNewline
+        Write-Host "Updated timestamps in $($htmlFile.Name)" -ForegroundColor Green
+    }
+}
+
 # Remove default sample PDF
 $samplePdf = Join-Path $root "web\compressed.tracemonkey-pldi-09.pdf"
 if (Test-Path $samplePdf) {

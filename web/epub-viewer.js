@@ -473,7 +473,20 @@
       return;
     }
 
-    book = window.ePub(fileParam);
+    $("viewer").textContent = "Loading EPUB... Please wait.";
+
+    try {
+      const response = await fetch(fileParam);
+      if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+      const arrayBuffer = await response.arrayBuffer();
+      
+      $("viewer").textContent = "";
+      book = window.ePub(arrayBuffer);
+    } catch (err) {
+      $("viewer").textContent = "Error loading EPUB: " + err.message;
+      return;
+    }
+
     rendition = book.renderTo("viewer", {
       width: "100%",
       height: "100%",
@@ -781,6 +794,13 @@
       // Allow picking the same file again.
       evt.target.value = "";
     });
+
+    const reloadBtn = $("reloadBtn");
+    if (reloadBtn) {
+      reloadBtn.addEventListener("click", () => {
+        window.location.reload();
+      });
+    }
 
     $("prevBtn").addEventListener("click", () => rendition?.prev());
     $("nextBtn").addEventListener("click", () => rendition?.next());
