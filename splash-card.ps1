@@ -6,7 +6,7 @@ Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$imagePath = Join-Path $scriptDir "splash.png"
+$imagePath = Join-Path $scriptDir "splash.ico"
 
 if (-not (Test-Path $imagePath)) {
     exit
@@ -23,7 +23,7 @@ if ([string]::IsNullOrWhiteSpace($gitInfo)) {
     $gitInfo = "Updated: $gitInfo"
 }
 
-$targetSize = 400
+$targetSize = 256
 $footerHeight = 80
 
 $form = New-Object System.Windows.Forms.Form
